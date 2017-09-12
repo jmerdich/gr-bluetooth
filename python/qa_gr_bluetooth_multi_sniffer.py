@@ -18,21 +18,34 @@
 # Boston, MA 02110-1301, USA.
 # 
 
-from gnuradio import gr, gr_unittest
-import bluetooth.swig as bluetooth
+from gnuradio import gr, gr_unittest, analog
+import gr_bluetooth
 
-class qa_gr_bluetooth_multi_sniffer (gr_unittest.TestCase):
 
-    def setUp (self):
-        self.tb = gr.top_block ()
+class qa_gr_bluetooth_multi_sniffer(gr_unittest.TestCase):
+    def setUp(self):
+        self.tb = gr.top_block()
 
-    def tearDown (self):
-        self.tb = None
+    def tearDown(self):
+        del self.tb
 
-    def test_001_t (self):
-        # set up fg
-        self.tb.run ()
-        # check data
+    def test_runs(self):
+        """
+        Confirms that the code actually runs
+        """
+        samp_rate = 2 * 1000 * 1000 # Arbitrary
+        center_freq = 2408 * 1000 * 1000 # should probably be in ISM band
+        squelch = 0 
+        self.tb.bluetooth_gr_bluetooth_multi_sniffer_0 = gr_bluetooth.multi_sniffer(samp_rate, center_freq, squelch, False)
+        
+        # toss in some random noise
+        self.tb.analog_fastnoise_source_x_0 = analog.fastnoise_source_c(analog.GR_GAUSSIAN, 1, 0, 8192)
+        self.tb.connect((self.tb.analog_fastnoise_source_x_0, 0), (self.tb.bluetooth_gr_bluetooth_multi_sniffer_0, 0))
+
+        # and run
+        num_samples = samp_rate * 10 # ie. 10 secs of data
+        self.tb.run(num_samples)
+        
 
 
 if __name__ == '__main__':
